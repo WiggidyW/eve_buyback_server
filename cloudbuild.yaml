@@ -1,0 +1,33 @@
+﻿steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'build'
+  - '-t'
+  - 'gcr.io/$PROJECT_ID/eve-buyback-server-rs:latest'
+  - '--build-arg'
+  - 'ITEM_CONFIGURATOR_TC_SERVICE_URL=${_ITEM_CONFIGURATOR_TC_SERVICE_URL}'
+  - '--build-arg'
+  - 'ITEM_CONFIGURATOR_REFRESH_TOKEN=${_ITEM_CONFIGURATOR_REFRESH_TOKEN}'
+  - '-f'
+  - 'Dockerfile'
+  - '.'
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'push'
+  - 'gcr.io/$PROJECT_ID/eve-buyback-server-rs:latest'
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+  - 'run'
+  - 'deploy'
+  - 'eve-buyback-server-rs'
+  - '--image'
+  - 'gcr.io/$PROJECT_ID/eve-buyback-server-rs:latest'
+  - '--region'
+  - 'us-central1'
+  - '--port'
+  - '8080'
+images: ['gcr.io/$PROJECT_ID/eve-buyback-server-rs:latest']
+timeout: '2100s'
+options:
+  logging: CLOUD_LOGGING_ONLY
