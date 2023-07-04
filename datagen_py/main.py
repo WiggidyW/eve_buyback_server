@@ -15,11 +15,19 @@ import os
 OUT_PATH = Path('out')
 DEBUG_OUT_PATH = Path('../server_rs/src')
 ITEMCFG_TOKEN = os.environ['ITEM_CONFIGURATOR_REFRESH_TOKEN']
-ITEMCFG_CLIENT = pb_client.ItemConfiguratorStub(
-    grpc.insecure_channel(
-        os.environ['ITEM_CONFIGURATOR_TC_SERVICE_URL']
+if os.environ.get('BUYBACK_DEBUG_MODE'):
+    ITEMCFG_CLIENT = pb_client.ItemConfiguratorStub(
+        grpc.insecure_channel(
+            os.environ['ITEM_CONFIGURATOR_TC_SERVICE_URL'],
+        )
     )
-)
+else:
+    ITEMCFG_CLIENT = pb_client.ItemConfiguratorStub(
+        grpc.secure_channel(
+            os.environ['ITEM_CONFIGURATOR_TC_SERVICE_URL'],
+            grpc.ssl_channel_credentials(),
+        )
+    )
 
 STATIC_MARKETS = {
     1030049082711: '1DQ1-A',
@@ -35,7 +43,7 @@ MARKET_KEYS = {
 
 def write_markets(f, markets):
     for k, v in markets.items():
-        f.write(f'    {k}: "{v}",\n')
+        f.write(f'    {k}u64 => "{v}",\n')
 
 def parse_float(v) -> 'int | None':
     if v is None:
@@ -84,13 +92,21 @@ def parse_location(location) -> 'int | None':
     raise ValueError(f'Invalid market: {location}')
 
 def parse_json(jsonStr) -> 'list[int]':
-    jsonObj = {k.lower(): v for k, v in json.loads(jsonStr).items()}
+    jsonObj = json.loads(jsonStr)
+    if not isinstance(jsonObj, dict):
+        return [0, 0, 0, 0]
+    else:
+        jsonObj = {k.lower(): v for k, v in jsonObj.items()}
 
     try:
-        efficiency = parse_float(jsonObj.get('efficiency'))
+        efficiency = parse_float(jsonObj.get('efficiency')) \
+            or parse_float(jsonObj.get('eff')) \
+            or parse_float(jsonObj.get('reprocess'))
         order_target = parse_order_target(jsonObj.get('kind'))
-        modifier = parse_modifier(jsonObj.get('mod'))
-        location = parse_location(jsonObj.get('location'))
+        modifier = parse_modifier(jsonObj.get('mod')) \
+            or parse_modifier(jsonObj.get('modifier'))
+        location = parse_location(jsonObj.get('location')) \
+            or parse_location(jsonObj.get('market'))
     except ValueError as e:
         raise ValueError(f'{jsonStr}: {e}')
     
@@ -141,7 +157,7 @@ def write_regions(f, itemcfg_client, refresh_token):
     for region, items in regions.items():
         f.write(f'    "{region}" => phf::phf_map! {{\n')
         for (type_id, jsonRow) in items:
-            f.write(f'        "{type_id}" => ({jsonRow[0]}, {jsonRow[1]}, {jsonRow[2]}, {jsonRow[3]}),\n')
+            f.write(f'        {type_id}u32 => ({jsonRow[0]}, {jsonRow[1]}, {jsonRow[2]}, {jsonRow[3]}),\n')
         f.write('    },\n')
 
 def main(debug=False):
