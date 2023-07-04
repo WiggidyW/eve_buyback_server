@@ -12,6 +12,7 @@ FROM rust:1.69-bullseye
 COPY ./server_rs /server_rs
 COPY --from=0 /datagen_py/out/static_map.rs /server_rs/src/
 WORKDIR /server_rs
+RUN apt-get update && apt-get install -y protobuf-compiler
 RUN cargo build --release
 RUN mv /server_rs/target/release/eve_buyback_server /root/service
 
