@@ -1,7 +1,6 @@
 pub mod weve_esi_proto;
 pub use weve_esi_proto as weve_esi;
-pub use weve_esi_proto::weve_esi_client;
-pub type WeveEsiClient = weve_esi_proto::weve_esi_client::WeveEsiClient<tonic::transport::Channel>;
+pub use weve_esi_proto::{WeveEsi, WeveEsiClient};
 
 pub mod buyback_proto;
 pub use buyback_proto as buyback;

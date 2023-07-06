@@ -1,5 +1,8 @@
 use super::order_target::OrderTarget;
-use crate::{error::Error, pb};
+use crate::{
+    error::Error,
+    pb::{self, WeveEsi},
+};
 
 pub async fn get_price(
     client: &pb::WeveEsiClient,
@@ -10,15 +13,18 @@ pub async fn get_price(
 ) -> Result<Option<f64>, Error> {
     let orders = client
         .clone()
-        .market_orders(pb::weve_esi::MarketOrdersReq {
-            location_id: location,
-            type_id: type_id,
-            token: refresh_token,
-            buy: order_target.is_buy(),
-        })
+        .market_orders(
+            pb::weve_esi::MarketOrdersReq {
+                location_id: location,
+                type_id: type_id,
+                token: refresh_token,
+                buy: order_target.is_buy(),
+            }
+            .into(),
+        )
         .await
         .map_err(|e| Error::WeveEsi(e))?
-        .into_inner()
+        .output
         .inner;
     Ok(get_price_from_orders(orders, order_target))
 }

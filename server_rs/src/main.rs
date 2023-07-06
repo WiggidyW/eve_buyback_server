@@ -16,7 +16,11 @@ const NAMESPACE: &str = "BUYBACK";
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let firestoredb_fut = firestoredb::FirestoreDb::new(NAMESPACE);
     let weve_esi_addr = tonicserver::service_url(WEVE_ESI_NAMESPACE)?;
-    let weve_esi_client_fut = pb::WeveEsiClient::connect(weve_esi_addr);
+    // let weve_esi_client_fut = pb::WeveEsiClient::new_client(weve_esi_addr);
+    let weve_esi_client = pb::WeveEsiClient(prost_twirp::HyperClient::new(
+        hyper::Client::new(),
+        &weve_esi_addr,
+    ));
 
     let service_addr = tonicserver::service_address(NAMESPACE)?;
     let type_db = typedb::new_type_db(NAMESPACE)?;
@@ -32,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 price_model_store,
                 token_store,
                 type_db,
-                weve_esi_client: weve_esi_client_fut.await?,
+                weve_esi_client: weve_esi_client,
                 firestoredb: firestoredb_fut.await?,
             },
         )))
