@@ -56,6 +56,7 @@ where
             &self.weve_esi_client,
         )
         .await?;
+        println!("{:?}", rep);
         if rep.sum > 0.0 {
             check_store::write(&self.firestoredb, &rep.hash, &rep).await?;
         }
