@@ -1,5 +1,6 @@
 use super::{price_model::PriceModelResponse, MarketNameStore, PriceModelStore, TokenStore};
 use crate::{error::Error, pb, typedb::TypeDb};
+use futures::{stream::FuturesUnordered, StreamExt};
 use std::{
     collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
@@ -19,7 +20,7 @@ pub async fn buy(
         .expect("Time went backwards")
         .as_secs();
 
-    let futs = req
+    let mut futs = req
         .items
         .into_iter()
         .map(|item| {
@@ -36,7 +37,7 @@ pub async fn buy(
                     &req.location,
                 )
         })
-        .collect::<Vec<_>>();
+        .collect::<FuturesUnordered<_>>();
 
     let version = model_store.get_version();
     let mut sum = 0.0;
@@ -45,8 +46,8 @@ pub async fn buy(
     req.location.hash(&mut hasher);
     version.hash(&mut hasher);
 
-    for fut in futs {
-        match fut.await? {
+    while let Some(rep) = futs.next().await {
+        match rep? {
             PriceModelResponse::Single(item) => {
                 item.type_id.hash(&mut hasher);
                 sum += item.price_per * item.quantity;
@@ -62,6 +63,8 @@ pub async fn buy(
             }
         };
     }
+
+    drop(futs);
 
     Ok(pb::buyback::Rep {
         items: rep_items,
