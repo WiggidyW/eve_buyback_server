@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import pb.item_configurator_pb2_grpc as pb_client
-import pb.item_configurator_pb2 as pb_proto
 import grpc
 import tempfile
 from datetime import datetime
@@ -9,6 +7,11 @@ import argparse
 import shutil
 import json
 import os
+import sys
+
+sys.path.append('pb')
+import pb.item_configurator_pb2_grpc as pb_client
+import pb.item_configurator_pb2 as pb_proto
 
 # OUT_PATH = Path(os.environ['BUYBACK_SERVER_OUT_PATH'])
 # GIT_URL = os.environ['BUYBACK_SERVER_GIT']
