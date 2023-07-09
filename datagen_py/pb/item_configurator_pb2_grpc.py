@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from . import item_configurator_pb2 as item__configurator__pb2
+import item_configurator_pb2 as item__configurator__pb2
 
 
 class ItemConfiguratorStub(object):
@@ -39,6 +39,11 @@ class ItemConfiguratorStub(object):
                 request_serializer=item__configurator__pb2.DelCharactersReq.SerializeToString,
                 response_deserializer=item__configurator__pb2.DelCharactersRep.FromString,
                 )
+        self.BuybackContracts = channel.unary_unary(
+                '/item_configurator_proto.ItemConfigurator/BuybackContracts',
+                request_serializer=item__configurator__pb2.BuybackContractsReq.SerializeToString,
+                response_deserializer=item__configurator__pb2.BuybackContractsRep.FromString,
+                )
 
 
 class ItemConfiguratorServicer(object):
@@ -74,6 +79,12 @@ class ItemConfiguratorServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def BuybackContracts(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ItemConfiguratorServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -101,6 +112,11 @@ def add_ItemConfiguratorServicer_to_server(servicer, server):
                     servicer.DelCharacters,
                     request_deserializer=item__configurator__pb2.DelCharactersReq.FromString,
                     response_serializer=item__configurator__pb2.DelCharactersRep.SerializeToString,
+            ),
+            'BuybackContracts': grpc.unary_unary_rpc_method_handler(
+                    servicer.BuybackContracts,
+                    request_deserializer=item__configurator__pb2.BuybackContractsReq.FromString,
+                    response_serializer=item__configurator__pb2.BuybackContractsRep.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -194,5 +210,22 @@ class ItemConfigurator(object):
         return grpc.experimental.unary_unary(request, target, '/item_configurator_proto.ItemConfigurator/DelCharacters',
             item__configurator__pb2.DelCharactersReq.SerializeToString,
             item__configurator__pb2.DelCharactersRep.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def BuybackContracts(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/item_configurator_proto.ItemConfigurator/BuybackContracts',
+            item__configurator__pb2.BuybackContractsReq.SerializeToString,
+            item__configurator__pb2.BuybackContractsRep.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

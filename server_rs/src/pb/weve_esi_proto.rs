@@ -262,6 +262,56 @@ pub struct TransactionsReq {
     #[prost(uint64, tag = "3")]
     pub since: u64,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExchangeContractItem {
+    #[prost(uint32, tag = "1")]
+    pub type_id: u32,
+    #[prost(int64, tag = "2")]
+    pub quantity: i64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExchangeContract {
+    #[prost(message, repeated, tag = "1")]
+    pub items: ::prost::alloc::vec::Vec<ExchangeContractItem>,
+    #[prost(uint64, tag = "2")]
+    pub location_id: u64,
+    #[prost(string, tag = "3")]
+    pub description: ::prost::alloc::string::String,
+    #[prost(double, tag = "4")]
+    pub price: f64,
+    #[prost(double, tag = "5")]
+    pub reward: f64,
+    #[prost(uint64, tag = "6")]
+    pub expires: u64,
+    #[prost(uint64, tag = "7")]
+    pub issued: u64,
+    #[prost(double, tag = "8")]
+    pub volume: f64,
+    #[prost(uint32, tag = "9")]
+    pub char_id: u32,
+    #[prost(uint32, tag = "10")]
+    pub corp_id: u32,
+    #[prost(bool, tag = "11")]
+    pub is_corp: bool,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExchangeContractsRep {
+    #[prost(message, repeated, tag = "1")]
+    pub inner: ::prost::alloc::vec::Vec<ExchangeContract>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExchangeContractsReq {
+    #[prost(message, repeated, tag = "1")]
+    pub characters: ::prost::alloc::vec::Vec<Entity>,
+    #[prost(message, repeated, tag = "2")]
+    pub corporations: ::prost::alloc::vec::Vec<Entity>,
+    #[prost(bool, tag = "3")]
+    pub active_only: bool,
+}
 pub use ::prost_twirp::ServiceRequest;
 pub use ::prost_twirp::PTRes;
 pub trait WeveEsi: Send + Sync + 'static {
@@ -297,6 +347,10 @@ pub trait WeveEsi: Send + Sync + 'static {
         &self,
         request: ::prost_twirp::ServiceRequest<TransactionsReq>,
     ) -> ::prost_twirp::PTRes<TransactionsRep>;
+    fn exchange_contracts(
+        &self,
+        request: ::prost_twirp::ServiceRequest<ExchangeContractsReq>,
+    ) -> ::prost_twirp::PTRes<ExchangeContractsRep>;
 }
 impl dyn WeveEsi {
     /// Construct a new client stub for the service.
@@ -389,6 +443,12 @@ impl WeveEsi for WeveEsiClient {
     ) -> ::prost_twirp::PTRes<TransactionsRep> {
         self.0.go("/twirp/weve_esi_proto.WeveEsi/Transactions", request)
     }
+    fn exchange_contracts(
+        &self,
+        request: ::prost_twirp::ServiceRequest<ExchangeContractsReq>,
+    ) -> ::prost_twirp::PTRes<ExchangeContractsRep> {
+        self.0.go("/twirp/weve_esi_proto.WeveEsi/ExchangeContracts", request)
+    }
 }
 pub struct WeveEsiServer<T: WeveEsi>(::std::sync::Arc<T>);
 impl<T: WeveEsi> ::prost_twirp::HyperService for WeveEsiServer<T> {
@@ -461,6 +521,13 @@ impl<T: WeveEsi> ::prost_twirp::HyperService for WeveEsiServer<T> {
                     let req = ::prost_twirp::ServiceRequest::from_hyper_request(req)
                         .await?;
                     static_service.transactions(req).await?.to_hyper_response()
+                })
+            }
+            "/twirp/weve_esi_proto.WeveEsi/ExchangeContracts" => {
+                Box::pin(async move {
+                    let req = ::prost_twirp::ServiceRequest::from_hyper_request(req)
+                        .await?;
+                    static_service.exchange_contracts(req).await?.to_hyper_response()
                 })
             }
             _ => {

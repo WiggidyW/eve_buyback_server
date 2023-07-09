@@ -1,3 +1,5 @@
+import weve_esi_pb2 as _weve_esi_pb2
+import buyback_pb2 as _buyback_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -5,9 +7,14 @@ from google.protobuf import message as _message
 from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 BOTH: Query
+CHARACTERS: AuthScope
+CONTRACTS: AuthScope
 DESCRIPTOR: _descriptor.FileDescriptor
 FALSE: Query
+ITEMS: AuthScope
+READ: AuthKind
 TRUE: Query
+WRITE: AuthKind
 
 class AddCharactersRep(_message.Message):
     __slots__ = ["authorized", "refresh_token"]
@@ -24,12 +31,46 @@ class AddCharactersReq(_message.Message):
     CHARACTERS_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     REFRESH_TOKEN_FIELD_NUMBER: _ClassVar[int]
-    auth_kind: bool
-    auth_scope: bool
+    auth_kind: AuthKind
+    auth_scope: AuthScope
     characters: _containers.RepeatedScalarFieldContainer[str]
     name: str
     refresh_token: str
-    def __init__(self, name: _Optional[str] = ..., auth_kind: bool = ..., auth_scope: bool = ..., refresh_token: _Optional[str] = ..., characters: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., auth_kind: _Optional[_Union[AuthKind, str]] = ..., auth_scope: _Optional[_Union[AuthScope, str]] = ..., refresh_token: _Optional[str] = ..., characters: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class BuybackContract(_message.Message):
+    __slots__ = ["buy_contract", "check_contract", "esi_contract", "hash_code"]
+    BUY_CONTRACT_FIELD_NUMBER: _ClassVar[int]
+    CHECK_CONTRACT_FIELD_NUMBER: _ClassVar[int]
+    ESI_CONTRACT_FIELD_NUMBER: _ClassVar[int]
+    HASH_CODE_FIELD_NUMBER: _ClassVar[int]
+    buy_contract: _buyback_pb2.Rep
+    check_contract: _buyback_pb2.Rep
+    esi_contract: _weve_esi_pb2.ExchangeContract
+    hash_code: str
+    def __init__(self, esi_contract: _Optional[_Union[_weve_esi_pb2.ExchangeContract, _Mapping]] = ..., check_contract: _Optional[_Union[_buyback_pb2.Rep, _Mapping]] = ..., buy_contract: _Optional[_Union[_buyback_pb2.Rep, _Mapping]] = ..., hash_code: _Optional[str] = ...) -> None: ...
+
+class BuybackContractsRep(_message.Message):
+    __slots__ = ["authorized", "contracts", "refresh_token"]
+    AUTHORIZED_FIELD_NUMBER: _ClassVar[int]
+    CONTRACTS_FIELD_NUMBER: _ClassVar[int]
+    REFRESH_TOKEN_FIELD_NUMBER: _ClassVar[int]
+    authorized: bool
+    contracts: _containers.RepeatedCompositeFieldContainer[BuybackContract]
+    refresh_token: str
+    def __init__(self, contracts: _Optional[_Iterable[_Union[BuybackContract, _Mapping]]] = ..., refresh_token: _Optional[str] = ..., authorized: bool = ...) -> None: ...
+
+class BuybackContractsReq(_message.Message):
+    __slots__ = ["include_buy", "include_check", "language", "refresh_token"]
+    INCLUDE_BUY_FIELD_NUMBER: _ClassVar[int]
+    INCLUDE_CHECK_FIELD_NUMBER: _ClassVar[int]
+    LANGUAGE_FIELD_NUMBER: _ClassVar[int]
+    REFRESH_TOKEN_FIELD_NUMBER: _ClassVar[int]
+    include_buy: bool
+    include_check: bool
+    language: str
+    refresh_token: str
+    def __init__(self, include_check: bool = ..., include_buy: bool = ..., refresh_token: _Optional[str] = ..., language: _Optional[str] = ...) -> None: ...
 
 class DelCharactersRep(_message.Message):
     __slots__ = ["authorized", "refresh_token"]
@@ -46,12 +87,12 @@ class DelCharactersReq(_message.Message):
     CHARACTERS_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     REFRESH_TOKEN_FIELD_NUMBER: _ClassVar[int]
-    auth_kind: bool
-    auth_scope: bool
+    auth_kind: AuthKind
+    auth_scope: AuthScope
     characters: _containers.RepeatedScalarFieldContainer[str]
     name: str
     refresh_token: str
-    def __init__(self, name: _Optional[str] = ..., auth_kind: bool = ..., auth_scope: bool = ..., refresh_token: _Optional[str] = ..., characters: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., auth_kind: _Optional[_Union[AuthKind, str]] = ..., auth_scope: _Optional[_Union[AuthScope, str]] = ..., refresh_token: _Optional[str] = ..., characters: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class ListCharactersRep(_message.Message):
     __slots__ = ["authorized", "characters", "refresh_token"]
@@ -69,11 +110,11 @@ class ListCharactersReq(_message.Message):
     AUTH_SCOPE_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     REFRESH_TOKEN_FIELD_NUMBER: _ClassVar[int]
-    auth_kind: bool
-    auth_scope: bool
+    auth_kind: AuthKind
+    auth_scope: AuthScope
     name: str
     refresh_token: str
-    def __init__(self, name: _Optional[str] = ..., auth_kind: bool = ..., auth_scope: bool = ..., refresh_token: _Optional[str] = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., auth_kind: _Optional[_Union[AuthKind, str]] = ..., auth_scope: _Optional[_Union[AuthScope, str]] = ..., refresh_token: _Optional[str] = ...) -> None: ...
 
 class ListItem(_message.Message):
     __slots__ = ["category_idx", "enabled", "group_idx", "json_idx", "market_group_idx", "name", "type_id"]
@@ -180,4 +221,10 @@ class UpdateReq(_message.Message):
     def __init__(self, name: _Optional[str] = ..., refresh_token: _Optional[str] = ..., items: _Optional[_Iterable[_Union[UpdateItem, _Mapping]]] = ..., json: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class Query(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = []
+
+class AuthKind(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = []
+
+class AuthScope(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = []
