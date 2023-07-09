@@ -30,7 +30,11 @@ impl PriceModelStore for PriceModelStoreMarker {
                     (Some(i), None) => PriceModel::Item(i),
                     (None, Some(r)) => PriceModel::Reprocess(r),
                     (Some(i), Some(r)) => PriceModel::ReprocessAs(i, r),
-                    (None, None) => panic!("Invalid price model found for type_id: {}", type_id),
+                    // (None, None) => panic!("Invalid price model found for type_id: {}", type_id),
+                    (None, None) => {
+                        println!("Invalid price model found for type_id: {}", type_id);
+                        PriceModel::Rejected
+                    }
                 };
             }
         }
