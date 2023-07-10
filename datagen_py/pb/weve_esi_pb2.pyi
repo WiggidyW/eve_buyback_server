@@ -255,6 +255,26 @@ class MarketOrdersReq(_message.Message):
     type_id: int
     def __init__(self, location_id: _Optional[int] = ..., type_id: _Optional[int] = ..., token: _Optional[str] = ..., buy: bool = ...) -> None: ...
 
+class MultiMarketOrderRep(_message.Message):
+    __slots__ = ["rep", "req"]
+    REP_FIELD_NUMBER: _ClassVar[int]
+    REQ_FIELD_NUMBER: _ClassVar[int]
+    rep: MarketOrdersRep
+    req: MarketOrdersReq
+    def __init__(self, req: _Optional[_Union[MarketOrdersReq, _Mapping]] = ..., rep: _Optional[_Union[MarketOrdersRep, _Mapping]] = ...) -> None: ...
+
+class MultiMarketOrdersRep(_message.Message):
+    __slots__ = ["inner"]
+    INNER_FIELD_NUMBER: _ClassVar[int]
+    inner: _containers.RepeatedCompositeFieldContainer[MultiMarketOrderRep]
+    def __init__(self, inner: _Optional[_Iterable[_Union[MultiMarketOrderRep, _Mapping]]] = ...) -> None: ...
+
+class MultiMarketOrdersReq(_message.Message):
+    __slots__ = ["inner"]
+    INNER_FIELD_NUMBER: _ClassVar[int]
+    inner: _containers.RepeatedCompositeFieldContainer[MarketOrdersReq]
+    def __init__(self, inner: _Optional[_Iterable[_Union[MarketOrdersReq, _Mapping]]] = ...) -> None: ...
+
 class Skills(_message.Message):
     __slots__ = ["inner"]
     class InnerEntry(_message.Message):

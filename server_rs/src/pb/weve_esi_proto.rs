@@ -34,6 +34,26 @@ pub struct MarketOrdersReq {
     #[prost(bool, tag = "4")]
     pub buy: bool,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MultiMarketOrderRep {
+    #[prost(message, optional, tag = "1")]
+    pub req: ::core::option::Option<MarketOrdersReq>,
+    #[prost(message, optional, tag = "2")]
+    pub rep: ::core::option::Option<MarketOrdersRep>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MultiMarketOrdersRep {
+    #[prost(message, repeated, tag = "1")]
+    pub inner: ::prost::alloc::vec::Vec<MultiMarketOrderRep>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MultiMarketOrdersReq {
+    #[prost(message, repeated, tag = "1")]
+    pub inner: ::prost::alloc::vec::Vec<MarketOrdersReq>,
+}
 /// uint32 is typeid
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -351,6 +371,10 @@ pub trait WeveEsi: Send + Sync + 'static {
         &self,
         request: ::prost_twirp::ServiceRequest<ExchangeContractsReq>,
     ) -> ::prost_twirp::PTRes<ExchangeContractsRep>;
+    fn multi_market_orders(
+        &self,
+        request: ::prost_twirp::ServiceRequest<MultiMarketOrdersReq>,
+    ) -> ::prost_twirp::PTRes<MultiMarketOrdersRep>;
 }
 impl dyn WeveEsi {
     /// Construct a new client stub for the service.
@@ -449,6 +473,12 @@ impl WeveEsi for WeveEsiClient {
     ) -> ::prost_twirp::PTRes<ExchangeContractsRep> {
         self.0.go("/twirp/weve_esi_proto.WeveEsi/ExchangeContracts", request)
     }
+    fn multi_market_orders(
+        &self,
+        request: ::prost_twirp::ServiceRequest<MultiMarketOrdersReq>,
+    ) -> ::prost_twirp::PTRes<MultiMarketOrdersRep> {
+        self.0.go("/twirp/weve_esi_proto.WeveEsi/MultiMarketOrders", request)
+    }
 }
 pub struct WeveEsiServer<T: WeveEsi>(::std::sync::Arc<T>);
 impl<T: WeveEsi> ::prost_twirp::HyperService for WeveEsiServer<T> {
@@ -528,6 +558,13 @@ impl<T: WeveEsi> ::prost_twirp::HyperService for WeveEsiServer<T> {
                     let req = ::prost_twirp::ServiceRequest::from_hyper_request(req)
                         .await?;
                     static_service.exchange_contracts(req).await?.to_hyper_response()
+                })
+            }
+            "/twirp/weve_esi_proto.WeveEsi/MultiMarketOrders" => {
+                Box::pin(async move {
+                    let req = ::prost_twirp::ServiceRequest::from_hyper_request(req)
+                        .await?;
+                    static_service.multi_market_orders(req).await?.to_hyper_response()
                 })
             }
             _ => {
