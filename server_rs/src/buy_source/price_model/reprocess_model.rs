@@ -1,11 +1,10 @@
 use super::{
-    super::{MarketNameStore, PriceModelStore, TokenStore},
+    super::{PriceModelStore, TokenStore},
     item_model::ItemModel,
-    price_model::PriceModel,
-    rejected_model::get_rejected_rep_item,
+    price_model::{FulfilledPriceModelRequests, PriceModel, PriceModelRequest, PriceModelRequests},
+    PriceModelResponse,
 };
 use crate::{error::Error, pb, typedb::TypeDb};
-use either::Either;
 
 #[derive(Debug)]
 pub struct ReprocessModel {
@@ -13,152 +12,138 @@ pub struct ReprocessModel {
 }
 
 impl ReprocessModel {
-    pub async fn get_rep_items(
-        self,
+    pub async fn to_requests(
+        &self,
+        req_item: pb::buyback::ReqItem,
         type_db: &impl TypeDb,
-        language: &str,
-        type_id: u32,
-        quantity: f64,
-        market_store: &impl MarketNameStore,
         token_store: &impl TokenStore,
-        client: &pb::WeveEsiClient,
         model_store: &impl PriceModelStore,
         region: &str,
-    ) -> Result<Vec<pb::buyback::RepItem>, Error> {
-        let children_fut = type_db.get_reprocess(type_id);
-        let parent_name_fut = type_db.get_name(type_id, language);
+    ) -> Result<PriceModelRequests, Error> {
+        let children = type_db.get_reprocess(req_item.type_id).await?;
+        let mut reqs = Vec::with_capacity(children.len() + 1);
+        let quantity = req_item.quantity as f64;
 
-        let mut sum = 0.0;
-
-        let children = children_fut.await?;
-        let mut rep_items = Vec::with_capacity(children.len() + 1);
-        rep_items.push(pb::buyback::RepItem {
-            type_id: type_id,
-            parent_type_id: type_id,
+        reqs.push(PriceModelRequest {
+            type_id: req_item.type_id,
+            parent_type_id: req_item.type_id,
             quantity: quantity,
-            name: parent_name_fut.await?,
-            price_per: 0.0,
-            description: format!("{}% Reprocessed", self.efficiency * 100.0),
-            accepted: false,
-            meta: None,
+            item_req: None,
         });
 
-        for either_fut in children
-            .into_iter()
-            .map(|(child_type_id, child_quantity)| {
-                match model_store.get_price_model(region, &child_type_id) {
-                    PriceModel::Item(item_model) => Either::Left(item_model.get_rep_item(
-                        type_db,
-                        language,
-                        child_type_id,
-                        type_id,
-                        child_quantity * quantity * self.efficiency,
-                        market_store,
-                        token_store,
-                        client,
-                    )),
-                    _ => Either::Right(get_rejected_rep_item(
-                        type_db,
-                        language,
-                        child_type_id,
-                        type_id,
-                        child_quantity * quantity * self.efficiency,
-                    )),
-                }
+        for (child_type_id, child_quantity) in children {
+            reqs.push(PriceModelRequest {
+                type_id: child_type_id,
+                parent_type_id: req_item.type_id,
+                quantity: child_quantity * quantity * self.efficiency,
+                item_req: match model_store.get_price_model(region, &child_type_id) {
+                    PriceModel::Item(item_model) => Some(
+                        item_model
+                            .to_request(child_type_id, token_store.get_token(&item_model.location)),
+                    ),
+                    _ => None,
+                },
             })
-            .collect::<Vec<Either<_, _>>>()
-        {
-            rep_items.push(match either_fut {
-                Either::Left(item_fut) => {
-                    let rep_item = item_fut.await?;
-                    sum += rep_item.price_per * rep_item.quantity;
-                    rep_item
-                }
-                Either::Right(rejected_fut) => rejected_fut.await?,
+        }
+
+        Ok(PriceModelRequests::Multi(reqs))
+    }
+
+    pub async fn to_requests_as(
+        &self,
+        req_item: pb::buyback::ReqItem,
+        type_db: &impl TypeDb,
+        token_store: &impl TokenStore,
+        item_model: &ItemModel,
+    ) -> Result<PriceModelRequests, Error> {
+        let children = type_db.get_reprocess(req_item.type_id).await?;
+        let mut reqs = Vec::with_capacity(children.len() + 1);
+        let quantity = req_item.quantity as f64;
+        let refresh_token = token_store.get_token(&item_model.location);
+
+        reqs.push(PriceModelRequest {
+            type_id: req_item.type_id,
+            parent_type_id: req_item.type_id,
+            quantity: quantity,
+            item_req: None,
+        });
+
+        for (child_type_id, child_quantity) in children {
+            reqs.push(PriceModelRequest {
+                type_id: child_type_id,
+                parent_type_id: req_item.type_id,
+                quantity: child_quantity * quantity * self.efficiency,
+                item_req: Some(item_model.to_request(child_type_id, refresh_token.clone())),
             });
         }
 
-        // Update the parent_rep_item in place
-        let mut parent_rep_item = rep_items.get_mut(0).unwrap();
-        if sum > 0.0 {
-            parent_rep_item.price_per = sum / quantity;
-            parent_rep_item.accepted = true;
-        } else {
-            parent_rep_item.description = format!(
-                "{} - All reprocessed items rejected",
-                parent_rep_item.description,
-            );
-        }
-
-        // Return the rep_items
-        Ok(rep_items)
+        Ok(PriceModelRequests::Multi(reqs))
     }
 
-    pub async fn get_rep_items_as(
-        self,
-        type_db: &impl TypeDb,
-        language: &str,
-        type_id: u32,
-        quantity: f64,
-        market_store: &impl MarketNameStore,
-        token_store: &impl TokenStore,
-        client: &pb::WeveEsiClient,
-        item_model: ItemModel,
-    ) -> Result<Vec<pb::buyback::RepItem>, Error> {
-        let children_fut = type_db.get_reprocess(type_id);
-        let parent_name_fut = type_db.get_name(type_id, language);
-
-        let market = market_store.get_market_name(&item_model.location);
-        let token = token_store.get_token(&item_model.location);
+    pub fn into_rep_items(self, reqs: FulfilledPriceModelRequests) -> PriceModelResponse {
         let mut sum = 0.0;
+        let fulfilled_reqs = reqs.multi_unchecked();
+        let mut rep_items = Vec::with_capacity(fulfilled_reqs.len());
+        let mut parent_item = None;
 
-        let children = children_fut.await?;
-        let mut rep_items = Vec::with_capacity(children.len() + 1);
+        for req in fulfilled_reqs {
+            if req.type_id == req.parent_type_id {
+                parent_item = Some(req);
+                continue;
+            } else {
+                match req.item_req {
+                    Some(item_req) => {
+                        let rep_item = item_req.item_model.clone().into_rep_item(
+                            req.type_id,
+                            req.parent_type_id,
+                            req.quantity,
+                            req.item_name,
+                            req.market_name,
+                            item_req,
+                        );
+                        sum += rep_item.price_per * rep_item.quantity;
+                        rep_items.push(rep_item);
+                    }
+                    None => rep_items.push(pb::buyback::RepItem {
+                        type_id: req.type_id,
+                        parent_type_id: req.parent_type_id,
+                        quantity: req.quantity,
+                        name: req.item_name,
+                        price_per: 0.0,
+                        description: "Rejected".to_string(),
+                        accepted: false,
+                        meta: None,
+                    }),
+                };
+            }
+        }
+
+        let parent_item = parent_item.unwrap();
+        let price_per = sum / parent_item.quantity;
+        let (description, accepted) = match price_per > 0.0 {
+            true => (format!("{}% Reprocessed", self.efficiency * 100.0), true),
+            false => (
+                format!(
+                    "{}% Reprocessed - All reprocessed items rejected",
+                    self.efficiency * 100.0
+                ),
+                false,
+            ),
+        };
+
         rep_items.push(pb::buyback::RepItem {
-            type_id: type_id,
-            parent_type_id: type_id,
-            quantity: quantity,
-            name: parent_name_fut.await?,
-            price_per: 0.0,
-            description: format!("{}% Reprocessed", self.efficiency * 100.0),
-            accepted: false,
+            type_id: parent_item.type_id,
+            parent_type_id: parent_item.parent_type_id,
+            quantity: parent_item.quantity,
+            name: parent_item.item_name,
+            price_per: price_per,
+            description: description,
+            accepted: accepted,
             meta: None,
         });
+        let parent_item_idx = rep_items.len() - 1;
+        rep_items.swap(0, parent_item_idx);
 
-        for fut in children
-            .into_iter()
-            .map(|(child_type_id, child_quantity)| {
-                item_model.clone().get_rep_item_as(
-                    type_db,
-                    language,
-                    child_type_id,
-                    type_id,
-                    child_quantity * quantity * self.efficiency,
-                    market.clone(),
-                    token.clone(),
-                    client,
-                )
-            })
-            .collect::<Vec<_>>()
-        {
-            let rep_item = fut.await?;
-            sum += rep_item.price_per * rep_item.quantity;
-            rep_items.push(rep_item);
-        }
-
-        // Update the parent_rep_item in place
-        let mut parent_rep_item = rep_items.get_mut(0).unwrap();
-        if sum > 0.0 {
-            parent_rep_item.price_per = sum / quantity;
-            parent_rep_item.accepted = true;
-        } else {
-            parent_rep_item.description = format!(
-                "{} - All reprocessed items rejected",
-                parent_rep_item.description,
-            );
-        }
-
-        // Return the rep_items
-        Ok(rep_items)
+        PriceModelResponse::Multi(rep_items)
     }
 }
