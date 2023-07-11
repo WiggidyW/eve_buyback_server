@@ -39,6 +39,7 @@ pub struct RepItem {
     #[prost(double, tag="3")]
     pub quantity: f64,
     #[prost(string, tag="4")]
+    #[serde(skip)]
     pub name: ::prost::alloc::string::String,
     #[prost(double, tag="5")]
     pub price_per: f64,
