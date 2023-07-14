@@ -61,16 +61,18 @@ class BuybackContractsRep(_message.Message):
     def __init__(self, contracts: _Optional[_Iterable[_Union[BuybackContract, _Mapping]]] = ..., refresh_token: _Optional[str] = ..., authorized: bool = ...) -> None: ...
 
 class BuybackContractsReq(_message.Message):
-    __slots__ = ["include_buy", "include_check", "language", "refresh_token"]
+    __slots__ = ["include_buy", "include_check", "include_items", "language", "refresh_token"]
     INCLUDE_BUY_FIELD_NUMBER: _ClassVar[int]
     INCLUDE_CHECK_FIELD_NUMBER: _ClassVar[int]
+    INCLUDE_ITEMS_FIELD_NUMBER: _ClassVar[int]
     LANGUAGE_FIELD_NUMBER: _ClassVar[int]
     REFRESH_TOKEN_FIELD_NUMBER: _ClassVar[int]
     include_buy: bool
     include_check: bool
+    include_items: bool
     language: str
     refresh_token: str
-    def __init__(self, include_check: bool = ..., include_buy: bool = ..., refresh_token: _Optional[str] = ..., language: _Optional[str] = ...) -> None: ...
+    def __init__(self, include_items: bool = ..., include_check: bool = ..., include_buy: bool = ..., refresh_token: _Optional[str] = ..., language: _Optional[str] = ...) -> None: ...
 
 class DelCharactersRep(_message.Message):
     __slots__ = ["authorized", "refresh_token"]

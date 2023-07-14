@@ -315,6 +315,10 @@ pub struct ExchangeContract {
     pub corp_id: u32,
     #[prost(bool, tag = "11")]
     pub is_corp: bool,
+    #[prost(uint32, tag = "12")]
+    pub system_id: u32,
+    #[prost(uint32, tag = "13")]
+    pub region_id: u32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -331,6 +335,8 @@ pub struct ExchangeContractsReq {
     pub corporations: ::prost::alloc::vec::Vec<Entity>,
     #[prost(bool, tag = "3")]
     pub active_only: bool,
+    #[prost(bool, tag = "4")]
+    pub include_items: bool,
 }
 pub use ::prost_twirp::ServiceRequest;
 pub use ::prost_twirp::PTRes;

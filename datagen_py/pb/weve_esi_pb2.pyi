@@ -99,7 +99,7 @@ class Entity(_message.Message):
     def __init__(self, id: _Optional[int] = ..., token: _Optional[str] = ...) -> None: ...
 
 class ExchangeContract(_message.Message):
-    __slots__ = ["char_id", "corp_id", "description", "expires", "is_corp", "issued", "items", "location_id", "price", "reward", "volume"]
+    __slots__ = ["char_id", "corp_id", "description", "expires", "is_corp", "issued", "items", "location_id", "price", "region_id", "reward", "system_id", "volume"]
     CHAR_ID_FIELD_NUMBER: _ClassVar[int]
     CORP_ID_FIELD_NUMBER: _ClassVar[int]
     DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
@@ -109,7 +109,9 @@ class ExchangeContract(_message.Message):
     ITEMS_FIELD_NUMBER: _ClassVar[int]
     LOCATION_ID_FIELD_NUMBER: _ClassVar[int]
     PRICE_FIELD_NUMBER: _ClassVar[int]
+    REGION_ID_FIELD_NUMBER: _ClassVar[int]
     REWARD_FIELD_NUMBER: _ClassVar[int]
+    SYSTEM_ID_FIELD_NUMBER: _ClassVar[int]
     VOLUME_FIELD_NUMBER: _ClassVar[int]
     char_id: int
     corp_id: int
@@ -120,9 +122,11 @@ class ExchangeContract(_message.Message):
     items: _containers.RepeatedCompositeFieldContainer[ExchangeContractItem]
     location_id: int
     price: float
+    region_id: int
     reward: float
+    system_id: int
     volume: float
-    def __init__(self, items: _Optional[_Iterable[_Union[ExchangeContractItem, _Mapping]]] = ..., location_id: _Optional[int] = ..., description: _Optional[str] = ..., price: _Optional[float] = ..., reward: _Optional[float] = ..., expires: _Optional[int] = ..., issued: _Optional[int] = ..., volume: _Optional[float] = ..., char_id: _Optional[int] = ..., corp_id: _Optional[int] = ..., is_corp: bool = ...) -> None: ...
+    def __init__(self, items: _Optional[_Iterable[_Union[ExchangeContractItem, _Mapping]]] = ..., location_id: _Optional[int] = ..., description: _Optional[str] = ..., price: _Optional[float] = ..., reward: _Optional[float] = ..., expires: _Optional[int] = ..., issued: _Optional[int] = ..., volume: _Optional[float] = ..., char_id: _Optional[int] = ..., corp_id: _Optional[int] = ..., is_corp: bool = ..., system_id: _Optional[int] = ..., region_id: _Optional[int] = ...) -> None: ...
 
 class ExchangeContractItem(_message.Message):
     __slots__ = ["quantity", "type_id"]
@@ -139,14 +143,16 @@ class ExchangeContractsRep(_message.Message):
     def __init__(self, inner: _Optional[_Iterable[_Union[ExchangeContract, _Mapping]]] = ...) -> None: ...
 
 class ExchangeContractsReq(_message.Message):
-    __slots__ = ["active_only", "characters", "corporations"]
+    __slots__ = ["active_only", "characters", "corporations", "include_items"]
     ACTIVE_ONLY_FIELD_NUMBER: _ClassVar[int]
     CHARACTERS_FIELD_NUMBER: _ClassVar[int]
     CORPORATIONS_FIELD_NUMBER: _ClassVar[int]
+    INCLUDE_ITEMS_FIELD_NUMBER: _ClassVar[int]
     active_only: bool
     characters: _containers.RepeatedCompositeFieldContainer[Entity]
     corporations: _containers.RepeatedCompositeFieldContainer[Entity]
-    def __init__(self, characters: _Optional[_Iterable[_Union[Entity, _Mapping]]] = ..., corporations: _Optional[_Iterable[_Union[Entity, _Mapping]]] = ..., active_only: bool = ...) -> None: ...
+    include_items: bool
+    def __init__(self, characters: _Optional[_Iterable[_Union[Entity, _Mapping]]] = ..., corporations: _Optional[_Iterable[_Union[Entity, _Mapping]]] = ..., active_only: bool = ..., include_items: bool = ...) -> None: ...
 
 class IndustryJob(_message.Message):
     __slots__ = ["activity", "blueprint_id", "character_id", "finish", "is_bpc", "location_id", "material_efficiency", "probability", "product_id", "runs", "start", "time_efficiency"]
